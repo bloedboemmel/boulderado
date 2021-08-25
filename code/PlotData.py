@@ -12,22 +12,20 @@ import matplotlib
 import matplotlib.pyplot as plt
 import csv
 from city import city, getcsv
+
 start = "<!-- BEGIN UPDATINGDATA BOARD-->"
 stop = "<!-- END UPDATINGDATA BOARD-->"
 
-startPNG = "<!-- BEGIN UPDATINGPNG BOARD-->"
-stopPNG = "<!-- END UPDATINGPNG BOARD-->"
+startSUMMARY = "<!-- BEGIN UPDATINGSUMMARY BOARD-->"
+stopSUMMARY = "<!-- END UPDATINGSUMMARY BOARD-->"
+
 tz = pytz.timezone('Europe/Berlin')
 now = datetime.now(tz)
 weekday = now.weekday()
 
 
-
-
-        
 def main(Stadt):
     GetData.getnow(Stadt)
-    
 
     with open(f'./today/{Stadt.ShortForm}Belegung.csv', newline='') as csvfile:
 
@@ -86,10 +84,6 @@ def main(Stadt):
         Stadt.pngfile = "./png/Working.png"
         Stadt.OldAverage = 0
         Stadt.belegung = belegung[-1]
-        
-
-
-
 
 
 def odd(number):
@@ -126,24 +120,43 @@ def replace_text_between(original_text, cities):
     return leading_text + delimiter_a + replacement_text + delimiter_b + trailing_text
 
 
-def get_text_for_average(Stadt):
+def replace_summary(original_text, cities):
+    delimiter_a = startSUMMARY
+    delimiter_b = stopSUMMARY
+    can_replace, leading_text, trailing_text = get_other_text(original_text, delimiter_a, delimiter_b)
+    if not can_replace:
+        return original_text
 
+    string = "[{Stadt}]({Url})"
+    replacement_text = "\n"
+    replacement_text += "this is a plot of the official Visitor-Numbers of "
+    if len(cities) == 1:
+        replacement_text += string.format(Stadt=cities[0].BoulderName, Url=cities[0].WebsiteUrl)
+    else:
+        for city in cities[:-2]:
+            replacement_text += string.format(Stadt=city.BoulderName, Url=city.WebsiteUrl) + ", "
+        replacement_text += string.format(Stadt=cities[-2].BoulderName, Url=cities[-2].WebsiteUrl) + " and "
+        replacement_text += string.format(Stadt=cities[-1].BoulderName, Url=cities[-1].WebsiteUrl)
+
+    replacement_text += "\n"
+    return leading_text + delimiter_a + replacement_text + delimiter_b + trailing_text
+
+
+def get_text_for_average(Stadt):
     average = int(Stadt.OldAverage)
     visitors = Stadt.besucher
     free = Stadt.frei
-    percent = int((visitors/(free+visitors))*100)
-    if  percent < average:
+    percent = int((visitors / (free + visitors)) * 100)
+    if percent < average:
         text = f"{visitors} out of {visitors + free} allowed visitors. " \
-                           f"--> {percent}% occupied! {int(average - percent)}% less than average!"
+               f"--> {percent}% occupied! {int(average - percent)}% less than average!"
     elif percent == average:
         text = f"{visitors} out of {visitors + free} allowed visitors. " \
-                           f"--> {percent}% occupied! That's average!"
+               f"--> {percent}% occupied! That's average!"
     else:
         text = f"{visitors} out of {visitors + free} allowed visitors. " \
-                           f"--> {percent}% occupied! {int(percent - average)}% more than average!"
+               f"--> {percent}% occupied! {int(percent - average)}% more than average!"
     Stadt.AverageText = text
-    
-
 
 
 def get_other_text(original_text, delimiter_a, delimiter_b):
@@ -159,14 +172,11 @@ def write_to_readme(cities):
     with open('README.md', 'r', encoding='utf-8') as file:
         readme = file.read()
         readme = replace_text_between(readme, cities)
+        readme = replace_summary(readme, cities)
 
     with open('README.md', 'w', encoding='utf-8') as file:
         # Write new board & list of movements
         file.write(readme)
-
-
-
-
 
 
 if __name__ == '__main__':
@@ -178,5 +188,5 @@ if __name__ == '__main__':
             main(cithere)
         else:
             print(f"{cithere.BoulderName} not opened right now!")
-    write_to_readme(cities)
-    
+    if len(cities) > 0:
+        write_to_readme(cities)

@@ -10,6 +10,10 @@ class city:
         self.WebsiteUrl = Stadt["WebsiteUrl"]
         self.BoulderadoUrl= Stadt["BoulderadoUrl"]
         self.Times = []
+        self.OldAverage = 0
+        self.besucher = 0
+        self.frei = 1
+        self.pngfile = ""
         for i in range(0,7):
             weekday = calendar.day_name[i]
             self.Times.append([int(Stadt[f"Open{weekday}"]), int(Stadt[f"Close{weekday}"])])
